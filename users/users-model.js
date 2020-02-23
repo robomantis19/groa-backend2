@@ -171,7 +171,7 @@ async function findUserDiaryId(id, userid){
 //----------------Reviews----------------
 
 function findReviews(){
-    return db('reviews').select('id', 'Date', 'Name', 'Year','Letterboxd URI','Rating','Rewatch', 'Review', 'Tags','Watched Date', 'user_id')
+    return db('reviews').select('id', 'Date', 'Name', 'Year','LetterboxdURI','Rating','Rewatch', 'Review', 'Tags','Watched_date', 'user_id')
 }
 async function addReviews(input, userid){
     const [id] = await db('reviews').insert(input).returning('id');
@@ -183,7 +183,7 @@ async function findUserReviewsId(id, userid){
     let project = await db('reviews as RD')
     .join('users as U' , 'U.id', 'RD.user_id')
     .select('RD.user_id', 'U.username').where('RD.user_id', Number(userid) )
-    .select('RD.id as reviews_id', 'RD.Date', 'RD.Name', 'RD.Year','RD.Letterboxd URI', 'RD.Rating','RD.Rewatch','RD.Review',  'RD.Tags', 'RD.Watched Date').where('RD.id', id)
+    .select('RD.id as reviews_id', 'RD.Date', 'RD.Name', 'RD.Year','RD.LetterboxdURI', 'RD.Rating','RD.Rewatch','RD.Review',  'RD.Tags', 'RD.Watched_date').where('RD.id', id)
     return project  
 }
 
@@ -276,7 +276,7 @@ async function getalldata(){
         allUserData = await db('users as U')
         .join('reviews as RD' , 'U.id', 'RD.user_id')
         .select('RD.user_id', 'U.username')
-        .select('RD.id as reviews_id', 'RD.Date', 'RD.Name', 'RD.Year','RD.Letterboxd URI', 'RD.Rating','RD.Rewatch','RD.Review',  'RD.Tags', 'RD.Watched Date').then(function(movie) { 
+        .select('RD.id as reviews_id', 'RD.Date', 'RD.Name', 'RD.Year','RD.LetterboxdURI', 'RD.Rating','RD.Rewatch','RD.Review',  'RD.Tags', 'RD.Watched_date').then(function(movie) { 
             WatchList.push({reviews: movie})
             return WatchList;
         })

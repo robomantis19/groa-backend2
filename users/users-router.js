@@ -3,6 +3,8 @@ const router = require('express').Router();
 const Users = require('./users-model');
 const restricted = require('../auth/restricted-middleware.js')
 
+const fs = require('fs'); 
+const csv = require('csv-parser');
 
 
 router.get('/', restricted,  (req, res) => { 
@@ -192,6 +194,7 @@ router.get('/reviews', (req, res) => {
 })
 router.post('/:id/reviews', (req, res) => { 
     // const id = req.params.id;
+    console.log('req.params.id:', req.params.id)
     Users.addReviews(req.body, req.params.id)
     .then(fav => { 
         res.status(200).json(fav)
@@ -241,15 +244,212 @@ router.get('/getalldata', (req, res) => {
         res.status(500).json({errorMessage: 'could not get all data', err: err})
     })
 })
-
-router.post('/upload', (req, res) => { 
+//--------------------------upload -------------------
+const bp = require('body-parser')
+router.post('/upload',  (req, res) => { 
+    
     console.log(req.files.movies)
     // console.log(req.file.Name)
     // console.log(req.file.size)
-    if(req.files.movies.name){
-        res.status(200).json({message: 'successfull file upload'})
-    }else{
-        res.status(500).json({error:'error console logging file.'})
-    }
+    // this is the reviews file
+    const dataFile1 = req.files.movies
+   dataFile1.mv('/Users/thomaskatalenas/tjs_side_projects-02-20/groa-backend2/users/reviews.csv', function(err) {
+        if (err)
+              
+        res.send('File uploaded!');
+      });
+
+      let results = [];
+      const inputFilePath = '/Users/thomaskatalenas/tjs_side_projects-02-20/groa-backend2/users/reviews.csv'
+      fs.createReadStream(inputFilePath)
+        .pipe(csv())
+        .on('data', function(data){
+            try {
+               
+                // console.log(data)
+                results.push(data);
+                
+                // console.log(data2)
+
+
+
+            }
+            catch(err) {
+                //error handler
+            }
+        })
+        .on('end', async function(){
+            //some final operation
+            // console.log(results);
+            let results2 = results.map((x) => { 
+                return {
+                    user_id: 2,
+                    Date: x.Date, 
+                    Name: x.Name, 
+                    Year: x.Year, 
+                    LetterboxdURI: x['Letterboxd URI'],
+                    Rating: x.Rating,
+                    Rewatch: x.Rewatch,
+                    Review: x.Review,
+                    Tags: x.Tags,
+                    Watched_date: x['Watched Date'],
+                }
+            }) 
+            
+            for(let i in results2){
+
+        
+                console.log(results2[i])
+                await Users.addReviews(results2[i], "2")
+                // .then(res => { 
+                //     res.send({message: 'successfull file upload'})
+                // }).catch(err => {
+                //     res.send({error:'error console logging file.', message: err})
+                // })
+            }
+            // console.log(results2);
+        }); 
+        
+//     const dataFile = require('./reviews.json')
+// /* function CSVToArray is sourced from https://www.bennadel.com/blog/1504-ask-ben-parsing-csv-strings-with-javascript-exec-regular-expression-command.htm
+// */
+//     function CSVToArray(strData, strDelimiter) {
+// // Check to see if the delimiter is defined. If not,
+// // then default to comma.
+//     strDelimiter = (strDelimiter || ",");
+//     // Create a regular expression to parse the CSV values.
+//     var objPattern = new RegExp(
+//         (
+//         // Delimiters.
+//         "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+
+//         // Quoted fields.
+//         "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+
+//         // Standard fields.
+//         "([^\"\\" + strDelimiter + "\\r\\n]*))"
+//         ),
+//         "gi"
+//     );
+
+
+//     // Create an array to hold our data. Give the array
+//     // a default empty first row.
+//     var arrData = [[]];
+
+//     // Create an array to hold our individual pattern
+//     // matching groups.
+//     var arrMatches = null;
+
+
+//     // Keep looping over the regular expression matches
+//     // until we can no longer find a match.
+//     while (arrMatches = objPattern.exec(strData)) {
+
+//         // Get the delimiter that was found.
+//         var strMatchedDelimiter = arrMatches[1];
+
+//         // Check to see if the given delimiter has a length
+//         // (is not the start of string) and if it matches
+//         // field delimiter. If id does not, then we know
+//         // that this delimiter is a row delimiter.
+//         if (
+//         strMatchedDelimiter.length &&
+//         (strMatchedDelimiter != strDelimiter)
+//         ) {
+
+//         // Since we have reached a new row of data,
+//         // add an empty row to our data array.
+//         arrData.push([]);
+
+//         }
+
+
+//         // Now that we have our delimiter out of the way,
+//         // let's check to see which kind of value we
+//         // captured (quoted or unquoted).
+//         if (arrMatches[2]) {
+
+//         // We found a quoted value. When we capture
+//         // this value, unescape any double quotes.
+//         var strMatchedValue = arrMatches[2].replace(
+//             new RegExp("\"\"", "g"),
+//             "\""
+//         );
+
+//         } else {
+
+//         // We found a non-quoted value.
+//         var strMatchedValue = arrMatches[3];
+
+//         }
+
+
+//         // Now that we have our value string, let's add
+//         // it to the data array.
+//         arrData[arrData.length - 1].push(strMatchedValue);
+//     }
+
+//     // Return the parsed data.
+//     return (arrData);
+//     }
+
+//     const fileArray = CSVToArray(dataFile.dataToClean)
+
+//     let dsData = [];
+
+//     // Still trying to find a better way for this
+//     // but right now Nodejs does not use Object.fromEntries
+//     fileArray.map((i, index) => {
+//         console.log('fileArray: i: ', i)
+//     dsData.push({
+//         // ndex: index,
+//         Date: i[0],
+//         Name: i[1],
+//         Year: i[2],
+//         LetterboxdURI: i[3],
+//         Rating: i[4],
+//         Rewatch: i[5],
+//         Review: i[6],
+//         Tags: i[7],
+//         Watched_date: i[8]
+//     })
+//     })
+//     console.log("dsData: ", dsData)
+
+//     // there's one array of undefined towards the end
+//     // I don't know where it's coming from yet.
+//     dsData.pop();
+
+//     // holds functions to control Regex patterns
+//     var utility = {
+//         escapeQuotes: function(string) {
+//             return string.replace(/"/g, '\\"');
+//         },
+//         unescapeQuotes: function(string) {
+//             return string.replace(/\\"/g, '"');
+//         },
+//         removeNewLines: function(string) {
+//         return string.replace(/\r?\n|\r/g, "");
+//         }
+//     };
+
+//     let cleanedData = [];
+
+//     dsData.map(i => {
+//     // we can keep cleaning with regex expressions in here and updating the final object.
+//     let cleanedReview = utility.removeNewLines(i.Review);
+//         console.log("dsData: i: ", i)
+//     updatedData = {
+//         ...i,
+//         Review: cleanedReview
+//     }
+
+//     cleanedData.push(updatedData)
+//     })
+
+//     console.log('cleanedData:', cleanedData)
+//     //-----------------------------------------------------------
+        
 })
 module.exports = router;
